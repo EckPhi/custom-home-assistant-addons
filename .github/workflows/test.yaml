@@ -1,0 +1,227 @@
+name: Test Addons
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  MONITORED_FILES: "build.yaml config.yaml Dockerfile rootfs"
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    name: Initialize addon tests
+    permissions:
+      contents: read
+    outputs:
+      changed_addons: ${{ steps.changed_addons.outputs.addons }}
+      changed: ${{ steps.changed_addons.outputs.changed }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0  # Required for changed files detection
+
+      - name: Get changed files
+        id: changed_files
+        uses: tj-actions/changed-files@v45
+
+      - name: Find add-on directories
+        id: addons
+        uses: home-assistant/actions/helpers/find-addons@master
+
+      - name: Get changed add-ons
+        id: changed_addons
+        run: |
+          declare -a changed_addons
+          for addon in ${{ steps.addons.outputs.addons }}; do
+            if [[ "${{ steps.changed_files.outputs.all_changed_files }}" =~ $addon ]]; then
+              for file in ${{ env.MONITORED_FILES }}; do
+                  if [[ "${{ steps.changed_files.outputs.all_changed_files }}" =~ $addon/$file ]]; then
+                    if [[ ! "${changed_addons[@]}" =~ $addon ]]; then
+                      changed_addons+=("\"${addon}\",");
+                    fi
+                  fi
+              done
+            fi
+          done
+
+          changed=$(echo ${changed_addons[@]} | rev | cut -c 2- | rev)
+
+          if [[ -n ${changed} ]]; then
+            echo "Changed add-ons: $changed";
+            echo "changed=true" >> $GITHUB_OUTPUT;
+            echo "addons=[$changed]" >> $GITHUB_OUTPUT;
+          else
+            echo "No add-on had any monitored files changed (${{ env.MONITORED_FILES }})";
+          fi
+
+  test-build:
+    needs: init
+    runs-on: ubuntu-latest
+    if: needs.init.outputs.changed == 'true'
+    name: Test build ${{ matrix.arch }} ${{ matrix.addon }} in HA environment
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        addon: ${{ fromJson(needs.init.outputs.changed_addons) }}
+        arch: ["aarch64", "amd64"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Get information
+        id: info
+        uses: home-assistant/actions/helpers/info@master
+        with:
+          path: "./${{ matrix.addon }}"
+
+      - name: Check if add-on should be tested
+        id: check
+        run: |
+          if [[ "${{ steps.info.outputs.architectures }}" =~ ${{ matrix.arch }} ]]; then
+            echo "test_arch=true" >> $GITHUB_OUTPUT;
+            # For addons with custom Dockerfile, image property may be null
+            # In that case, use the addon directory name as the image name
+            if [[ "${{ steps.info.outputs.image }}" == "null" ]]; then
+              echo "image=${{ matrix.addon }}" >> $GITHUB_OUTPUT;
+            else
+              echo "image=$(echo ${{ steps.info.outputs.image }} | cut -d'/' -f3)" >> $GITHUB_OUTPUT;
+            fi
+          else
+            echo "${{ matrix.arch }} is not a valid arch for ${{ matrix.addon }}, skipping test";
+            echo "test_arch=false" >> $GITHUB_OUTPUT;
+          fi
+
+      - name: Set up QEMU
+        if: steps.check.outputs.test_arch == 'true'
+        uses: docker/setup-qemu-action@v3.4.0
+
+      - name: Set up Docker Buildx
+        if: steps.check.outputs.test_arch == 'true'
+        uses: docker/setup-buildx-action@v3.11.0
+
+      - name: Build addon (test mode)
+        if: steps.check.outputs.test_arch == 'true'
+        uses: home-assistant/builder@2025.11.0
+        with:
+          args: |
+            --test \
+            --${{ matrix.arch }} \
+            --target /data/${{ matrix.addon }} \
+            --image "${{ steps.check.outputs.image }}" \
+            --docker-hub "local" \
+            --no-latest \
+            --addon
+
+      - name: Test addon build completed successfully
+        if: steps.check.outputs.test_arch == 'true'
+        run: |
+          echo "✅ Addon ${{ matrix.addon }} for ${{ matrix.arch }} built successfully in HA builder environment"
+
+  test-integration:
+    needs: init
+    runs-on: ubuntu-latest
+    if: needs.init.outputs.changed == 'true'
+    name: Integration test ${{ matrix.addon }}
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        addon: ${{ fromJson(needs.init.outputs.changed_addons) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Get addon information
+        id: info
+        uses: home-assistant/actions/helpers/info@master
+        with:
+          path: "./${{ matrix.addon }}"
+
+      - name: Validate addon configuration
+        run: |
+          # Validate config.yaml exists and is valid
+          if [ ! -f "${{ matrix.addon }}/config.yaml" ]; then
+            echo "❌ config.yaml not found"
+            exit 1
+          fi
+          
+          # Check required fields
+          if ! grep -q "^name:" "${{ matrix.addon }}/config.yaml"; then
+            echo "❌ 'name' field missing in config.yaml"
+            exit 1
+          fi
+          
+          if ! grep -q "^version:" "${{ matrix.addon }}/config.yaml"; then
+            echo "❌ 'version' field missing in config.yaml"
+            exit 1
+          fi
+          
+          if ! grep -q "^slug:" "${{ matrix.addon }}/config.yaml"; then
+            echo "❌ 'slug' field missing in config.yaml"
+            exit 1
+          fi
+          
+          echo "✅ Addon configuration is valid"
+
+      - name: Validate Dockerfile
+        run: |
+          if [ -f "${{ matrix.addon }}/Dockerfile" ]; then
+            # Check if Dockerfile has FROM statement
+            if ! grep -q "^FROM" "${{ matrix.addon }}/Dockerfile"; then
+              echo "❌ Dockerfile missing FROM statement"
+              exit 1
+            fi
+            echo "✅ Dockerfile is present and valid"
+          else
+            echo "ℹ️ No Dockerfile found (using image from config)"
+          fi
+
+      - name: Validate build.yaml (if present)
+        run: |
+          if [ -f "${{ matrix.addon }}/build.yaml" ]; then
+            if ! grep -q "build_from:" "${{ matrix.addon }}/build.yaml"; then
+              echo "❌ build.yaml missing build_from"
+              exit 1
+            fi
+            echo "✅ build.yaml is valid"
+          else
+            echo "ℹ️ No build.yaml found"
+          fi
+
+      - name: Check documentation
+        run: |
+          if [ ! -f "${{ matrix.addon }}/README.md" ] && [ ! -f "${{ matrix.addon }}/DOCS.md" ]; then
+            echo "⚠️ Warning: No README.md or DOCS.md found"
+          else
+            echo "✅ Documentation found"
+          fi
+
+  summary:
+    needs: [test-build, test-integration]
+    runs-on: ubuntu-latest
+    if: always()
+    name: Test Summary
+    permissions:
+      contents: read
+    steps:
+      - name: Check test results
+        run: |
+          if [[ "${{ needs.test-build.result }}" == "success" ]] && [[ "${{ needs.test-integration.result }}" == "success" ]]; then
+            echo "✅ All addon tests passed successfully!"
+            exit 0
+          elif [[ "${{ needs.test-build.result }}" == "skipped" ]] && [[ "${{ needs.test-integration.result }}" == "skipped" ]]; then
+            echo "ℹ️ No addons changed, tests skipped"
+            exit 0
+          else
+            echo "❌ Some tests failed"
+            echo "Build tests: ${{ needs.test-build.result }}"
+            echo "Integration tests: ${{ needs.test-integration.result }}"
+            exit 1
+          fi

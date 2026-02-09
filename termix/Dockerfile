@@ -1,8 +1,12 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-dockerfile
 FROM ghcr.io/lukegus/termix:latest
 
-# Ensure required directories exist
-RUN mkdir -p /app /data
+# Switch to root user to create directories and setup symlinks
+USER root
+
+# Ensure required directories exist with proper permissions
+# Create /data with write permissions for all users since we don't know the UID
+RUN mkdir -p /app /data && chmod 1777 /data
 
 # Remove the default /app/data directory if it exists
 RUN rm -rf /app/data

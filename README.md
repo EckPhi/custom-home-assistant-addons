@@ -6,6 +6,17 @@ Add-on documentation: <https://developers.home-assistant.io/docs/add-ons>
 
 [![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FEckPhi%2Fcustom-home-assistant-addons)
 
+## CI/CD
+
+This repository uses GitHub Actions for continuous integration and testing:
+
+- **Linting**: Validates addon configuration and structure
+- **Builder**: Builds addons for all supported architectures
+- **Testing**: Tests addon builds in a Home Assistant builder environment
+  - Validates addon configuration files (config.yaml, build.yaml, Dockerfile)
+  - Builds addons using Home Assistant builder in test mode
+  - Verifies addon structure and documentation
+
 ## Add-ons
 
 This repository contains the following add-ons
