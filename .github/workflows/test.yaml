@@ -15,6 +15,8 @@ jobs:
   init:
     runs-on: ubuntu-latest
     name: Initialize addon tests
+    permissions:
+      contents: read
     outputs:
       changed_addons: ${{ steps.changed_addons.outputs.addons }}
       changed: ${{ steps.changed_addons.outputs.changed }}
@@ -61,6 +63,8 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.init.outputs.changed == 'true'
     name: Test build ${{ matrix.arch }} ${{ matrix.addon }} in HA environment
+    permissions:
+      contents: read
     strategy:
       matrix:
         addon: ${{ fromJson(needs.init.outputs.changed_addons) }}
@@ -113,6 +117,8 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.init.outputs.changed == 'true'
     name: Integration test ${{ matrix.addon }}
+    permissions:
+      contents: read
     strategy:
       matrix:
         addon: ${{ fromJson(needs.init.outputs.changed_addons) }}
@@ -190,6 +196,8 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     name: Test Summary
+    permissions:
+      contents: read
     steps:
       - name: Check test results
         run: |
