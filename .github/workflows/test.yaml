@@ -84,6 +84,7 @@ jobs:
         run: |
           if [[ "${{ steps.info.outputs.architectures }}" =~ ${{ matrix.arch }} ]]; then
             echo "test_arch=true" >> $GITHUB_OUTPUT;
+            echo "image=$(echo ${{ steps.info.outputs.image }} | cut -d'/' -f3)" >> $GITHUB_OUTPUT;
           else
             echo "${{ matrix.arch }} is not a valid arch for ${{ matrix.addon }}, skipping test";
             echo "test_arch=false" >> $GITHUB_OUTPUT;
@@ -105,7 +106,8 @@ jobs:
             --test \
             --${{ matrix.arch }} \
             --target /data/${{ matrix.addon }} \
-            --docker-hub local
+            --image "${{ steps.check.outputs.image }}" \
+            --addon
 
       - name: Test addon build completed successfully
         if: steps.check.outputs.test_arch == 'true'
