@@ -15,10 +15,6 @@ ports_description:
 environment:
   PORT: "8080"
 tmpfs: false
-options:
-  port: 8080
-schema:
-  port: "int(1,65535)?"
 # Use custom Dockerfile to properly configure persistent storage
 # image: "ghcr.io/lukegus/termix:latest"
 

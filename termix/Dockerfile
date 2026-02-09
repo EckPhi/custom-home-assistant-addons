@@ -1,8 +1,8 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-dockerfile
 FROM ghcr.io/lukegus/termix:latest
 
-# Ensure /data directory exists (Home Assistant persistent storage location)
-RUN mkdir -p /data
+# Ensure required directories exist
+RUN mkdir -p /app /data
 
 # Remove the default /app/data directory if it exists
 RUN rm -rf /app/data

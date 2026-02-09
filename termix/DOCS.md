@@ -4,7 +4,7 @@
 
 This add-on runs a Termix server in Home Assistant with persistent data storage.
 
-Termix is a terminal-based application accessible via web interface.
+Termix is a terminal-based application accessible via web interface on port 8080.
 
 ## Installation
 
@@ -17,15 +17,7 @@ Follow these steps to install the add-on:
 
 ## Configuration
 
-The add-on can be configured with the following options:
-
-### Option: `port`
-
-The port on which the Termix web interface will be accessible. Default is `8080`.
-
-```yaml
-port: 8080
-```
+This add-on does not require any configuration. It runs on port 8080 by default.
 
 ## How to use
 
