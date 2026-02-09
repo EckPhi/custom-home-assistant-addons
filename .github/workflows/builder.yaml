@@ -28,9 +28,6 @@ jobs:
       - name: Get changed files
         id: changed_files
         uses: tj-actions/changed-files@v45
-        with:
-          files: |
-            **
 
       - name: Find add-on directories
         id: addons
