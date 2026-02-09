@@ -27,13 +27,18 @@ jobs:
         run: |
           IMAGE="ghcr.io/lukegus/termix:latest"
           
-          # Get the image digest without authentication (pull the manifest)
-          DIGEST=$(docker pull $IMAGE 2>&1 | grep "Digest:" | awk '{print $2}')
+          # Use docker buildx imagetools inspect to get digest efficiently (no image download)
+          DIGEST=$(docker buildx imagetools inspect $IMAGE 2>&1 | grep "Digest:" | head -1 | awk '{print $2}')
           
           if [ -z "$DIGEST" ]; then
-            echo "Failed to get digest, trying alternative method"
-            # Try using skopeo if docker pull doesn't work
-            DIGEST=$(skopeo inspect docker://$IMAGE 2>/dev/null | jq -r '.Digest' || echo "")
+            echo "Buildx imagetools failed, trying docker manifest inspect"
+            # For multi-platform images, get the manifest list digest
+            DIGEST=$(docker manifest inspect $IMAGE 2>/dev/null | jq -r 'if .manifests then .manifests[0].digest else .config.digest end' || echo "")
+          fi
+          
+          if [ -z "$DIGEST" ]; then
+            echo "Alternative methods failed, falling back to docker pull"
+            DIGEST=$(docker pull $IMAGE 2>&1 | grep "Digest:" | awk '{print $2}')
           fi
           
           echo "digest=$DIGEST" >> $GITHUB_OUTPUT
