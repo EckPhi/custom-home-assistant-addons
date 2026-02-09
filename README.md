@@ -17,6 +17,8 @@ This repository contains the following add-ons
 
 _Termix server with persistent data storage._
 
+**Note:** This add-on automatically checks for updates from the upstream Termix Docker image daily and will create pull requests when new versions are available.
+
 ### [Example add-on](./example)
 
 ![Supports aarch64 Architecture][aarch64-shield]
