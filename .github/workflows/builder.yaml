@@ -85,9 +85,9 @@ jobs:
           if [[ "${{ steps.info.outputs.architectures }}" =~ ${{ matrix.arch }} ]]; then
             echo "build_arch=true" >> $GITHUB_OUTPUT;
             # For addons with custom Dockerfile, image property may be null
-            # In that case, use the slug as the image name
+            # In that case, use the addon directory name as the image name
             if [[ "${{ steps.info.outputs.image }}" == "null" ]]; then
-              echo "image=${{ steps.info.outputs.slug }}" >> $GITHUB_OUTPUT;
+              echo "image=${{ matrix.addon }}" >> $GITHUB_OUTPUT;
             else
               echo "image=$(echo ${{ steps.info.outputs.image }} | cut -d'/' -f3)" >> $GITHUB_OUTPUT;
             fi
