@@ -18,7 +18,7 @@ jobs:
         id: current
         run: |
           # Extract current image from build.yaml
-          CURRENT_IMAGE=$(grep -A 1 "build_from:" termix/build.yaml | grep "amd64:" | awk '{print $2}' | tr -d '"')
+          CURRENT_IMAGE=$(grep "amd64:" termix/build.yaml | awk '{print $2}' | tr -d '"')
           echo "image=$CURRENT_IMAGE" >> $GITHUB_OUTPUT
           echo "Current image: $CURRENT_IMAGE"
 
@@ -88,16 +88,16 @@ jobs:
           
           # Update CHANGELOG.md
           DATE=$(date +%Y-%m-%d)
-          cat > termix/CHANGELOG.md.new << EOF
-# Changelog
-
-## $NEW_VERSION ($DATE)
-
-- Updated to latest upstream Termix Docker image
-- Image digest: ${{ steps.upstream.outputs.digest }}
-
-EOF
-          tail -n +3 termix/CHANGELOG.md >> termix/CHANGELOG.md.new
+          {
+            echo "# Changelog"
+            echo ""
+            echo "## $NEW_VERSION ($DATE)"
+            echo ""
+            echo "- Updated to latest upstream Termix Docker image"
+            echo "- Image digest: ${{ steps.upstream.outputs.digest }}"
+            echo ""
+            tail -n +3 termix/CHANGELOG.md
+          } > termix/CHANGELOG.md.new
           mv termix/CHANGELOG.md.new termix/CHANGELOG.md
           
           echo "version=$NEW_VERSION" >> $GITHUB_ENV
