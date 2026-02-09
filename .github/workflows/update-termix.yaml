@@ -10,6 +10,9 @@ jobs:
   check-update:
     runs-on: ubuntu-latest
     name: Check for Termix updates
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Check out repository
         uses: actions/checkout@v6.0.2
