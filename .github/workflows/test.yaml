@@ -116,6 +116,7 @@ jobs:
             --target /data/${{ matrix.addon }} \
             --image "${{ steps.check.outputs.image }}" \
             --docker-hub "local" \
+            --no-latest \
             --addon
 
       - name: Test addon build completed successfully
