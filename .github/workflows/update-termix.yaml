@@ -17,6 +17,11 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6.0.2
 
+      - name: Install skopeo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo
+
       - name: Get current image digest
         id: current
         run: |
@@ -130,14 +135,20 @@ jobs:
           # Store the new digest
           echo "${{ steps.upstream.outputs.digest }}" > termix/.image-digest
           
-          # Update CHANGELOG.md
+          # Update CHANGELOG.md with conditional message
           DATE=$(date +%Y-%m-%d)
+          if [ -n "$UPSTREAM_VERSION" ]; then
+            UPDATE_MSG="- Updated to upstream Termix version $NEW_VERSION"
+          else
+            UPDATE_MSG="- Updated to latest upstream Termix Docker image (version auto-incremented)"
+          fi
+          
           {
             echo "# Changelog"
             echo ""
             echo "## $NEW_VERSION ($DATE)"
             echo ""
-            echo "- Updated to upstream Termix version $NEW_VERSION"
+            echo "$UPDATE_MSG"
             echo "- Image digest: ${{ steps.upstream.outputs.digest }}"
             echo ""
             tail -n +3 termix/CHANGELOG.md
