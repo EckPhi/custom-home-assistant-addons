@@ -4,7 +4,7 @@ FROM ghcr.io/lukegus/termix:latest
 # Switch to root user to create directories and setup symlinks
 USER root
 
-# Ensure required directories exist and set proper ownership
+# Ensure required directories exist with proper permissions
 # Create /data with write permissions for all users since we don't know the UID
 RUN mkdir -p /app /data && chmod 1777 /data
 
