@@ -37,10 +37,11 @@ All Termix data is stored in the `/data` directory, which is:
 This add-on automatically tracks the upstream Termix Docker image (`ghcr.io/lukegus/termix:latest`). The repository includes an automated workflow that:
 
 - Checks daily for new versions of the upstream Termix image
-- Automatically creates a pull request when updates are detected
-- Mirrors the upstream version to ensure you have access to the latest features and fixes
+- Automatically finds and mirrors the upstream release version (e.g., 1.11.0)
+- Creates a pull request when updates are detected
+- Ensures version numbers match the upstream releases for transparency
 
-The version number is automatically incremented with each upstream update. Check the CHANGELOG.md for details on each release.
+The version number is directly mirrored from upstream release tags. Check the CHANGELOG.md for details on each release.
 
 ## Support
 
