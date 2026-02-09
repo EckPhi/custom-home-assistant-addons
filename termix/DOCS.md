@@ -32,6 +32,16 @@ All Termix data is stored in the `/data` directory, which is:
 - Automatically included in Home Assistant backups
 - Mapped to the add-on's data storage
 
+## Auto-Updates
+
+This add-on automatically tracks the upstream Termix Docker image (`ghcr.io/lukegus/termix:latest`). The repository includes an automated workflow that:
+
+- Checks daily for new versions of the upstream Termix image
+- Automatically creates a pull request when updates are detected
+- Mirrors the upstream version to ensure you have access to the latest features and fixes
+
+The version number is automatically incremented with each upstream update. Check the CHANGELOG.md for details on each release.
+
 ## Support
 
 For issues with the Termix application itself, please visit: https://github.com/lukegus/termix
