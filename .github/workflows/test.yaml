@@ -104,7 +104,7 @@ jobs:
 
       - name: Set up Docker Buildx
         if: steps.check.outputs.test_arch == 'true'
-        uses: docker/setup-buildx-action@v3.11.0
+        uses: docker/setup-buildx-action@v3.12.0
 
       - name: Build addon (test mode)
         if: steps.check.outputs.test_arch == 'true'
