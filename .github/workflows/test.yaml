@@ -100,7 +100,7 @@ jobs:
 
       - name: Set up QEMU
         if: steps.check.outputs.test_arch == 'true'
-        uses: docker/setup-qemu-action@v3.4.0
+        uses: docker/setup-qemu-action@v3.7.0
 
       - name: Set up Docker Buildx
         if: steps.check.outputs.test_arch == 'true'
