@@ -108,7 +108,7 @@ jobs:
 
       - name: Build addon (test mode)
         if: steps.check.outputs.test_arch == 'true'
-        uses: home-assistant/builder@2025.11.0
+        uses: home-assistant/builder@2026.02.1
         with:
           args: |
             --test \
